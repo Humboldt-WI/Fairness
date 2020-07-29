@@ -12,13 +12,13 @@
 
 [![minimal R version](https://img.shields.io/badge/R%3E%3D-3.6.0-6666ff.svg)](https://cran.r-project.org/)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/fairness)](https://www.r-pkg.org/badges/version/fairness)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.1.0-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.1.1-orange.svg?style=flat-square)](commits/master)
 
 ---
 
 ## Package overview
 
-The fairness R package provides a tool to easily calculate algorithmic fairness metrics for given predicted probabilities or predicted classes between different sensitive groups. It also provides additional opportunities to visualize and compare other prediction metrics between the subgroups. 
+The fairness R package provides tools to easily calculate algorithmic fairness metrics for given predicted probabilities or predicted classes between different sensitive groups. It also provides opportunities to visualize and compare other prediction metrics between the subgroups. 
 
 The package contains functions to compute the most commonly used metrics of algorithmic fairness such as:   
 
@@ -39,10 +39,12 @@ In addition, the following comparisons are also implemented:
 
 Most fairness measures are computed based on the confusion matrix resulting from fitting a binary classification model.
 
+The comprehensive tutorial on using the package is provided in [this blogpost](https://kozodoi.me/r/fairness/packages/2020/05/01/fairness-tutorial.html).
+
 
 ## Installation
 
-You can instal the latest stable package version from CRAN by running:
+You can install the latest stable package version from [CRAN](https://cran.r-project.org/package=fairness) by running:
 
 ```r
 install.packages('fairness')
@@ -59,7 +61,7 @@ library(fairness)
 
 ## Fairness pipeline
 
-You will find a detailed tutorial in the fairness vignette. We recommend that you spend some time going through the vignette, as it contains a much more in-depth description of the fairness package compared to this brief readme.
+You will find a brief tutorial in the fairness [vignette](https://github.com/kozodoi/fairness/blob/master/vignettes/fairness.Rmd). We recommend that you go through the vignette, as it contains a more in-depth description of the fairness package compared to this brief README. The more detailed tutorial is also available in [this blogpost](https://kozodoi.me/r/fairness/packages/2020/05/01/fairness-tutorial.html).
 
 ```r
 vignette('fairness')
@@ -116,7 +118,7 @@ Installation requires R 3.6+ and the following packages:
 - [caret](https://cran.r-project.org/package=caret)
 - [ggplot2](https://cran.r-project.org/package=ggplot2)
 - [pROC](https://cran.r-project.org/package=pROC)
-- [e1071](https://cran.r-project.org/package=e1071g)
+- [e1071](https://cran.r-project.org/package=e1071)
 
 
 ## Acknowledgments
