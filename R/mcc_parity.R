@@ -2,6 +2,8 @@
 #'
 #' @description
 #' This function computes the Matthews Correlation Coefficient (MCC) parity metric
+#' 
+#' Formula: (TP × TN - FP × FN) / sqrt((TP + FP) × (TP + FN) × (TN + FP) × (TN + FN))
 #'
 #' @details
 #' This function computes the Matthews Correlation Coefficient (MCC) parity metric. In the returned
@@ -10,15 +12,15 @@
 #' Matthews Correlation Coefficients rates will be reflected in numbers lower than 1 in the returned named vector, thus numbers
 #' lower than 1 mean WORSE prediction for the subgroup.
 #'
-#' @param data The dataframe that contains the necessary columns.
-#' @param outcome The column name of the actual outcomes.
-#' @param group Sensitive group to examine.
-#' @param probs The column name or vector of the predicted probabilities (numeric between 0 - 1). If not defined, argument preds needs to be defined.
-#' @param preds The column name or vector of the predicted binary outcome (0 or 1). If not defined, argument probs needs to be defined.
-#' @param preds_levels The desired levels of the predicted binary outcome. If not defined, levels of the outcome variable are used.
-#' @param outcome_base Base level for the target variable used to compute fairness metrics. Default is the first level of the outcome variable.
+#' @param data Data.frame that contains the necessary columns.
+#' @param group Column name indicating the sensitive group (character).
+#' @param base Base level of the sensitive group (character).
+#' @param group_breaks If group is continuous (e.g., age): either a numeric vector of two or more unique cut points or a single number >= 2 giving the number of intervals into which group feature is to be cut.
+#' @param outcome Column name indicating the binary outcome variable (character).
+#' @param outcome_base Base level of the outcome variable (i.e., negative class). Default is the first level of the outcome variable.
+#' @param probs Column name or vector with the predicted probabilities (numeric between 0 - 1). Either probs or preds need to be supplied.
+#' @param preds Column name or vector with the predicted binary outcome (0 or 1). Either probs or preds need to be supplied.
 #' @param cutoff Cutoff to generate predicted outcomes from predicted probabilities. Default set to 0.5.
-#' @param base Base level for sensitive group comparison
 #'
 #' @name mcc_parity
 #'
@@ -29,18 +31,21 @@
 #'
 #' @examples
 #' data(compas)
-#' mcc_parity(data = compas, outcome = 'Two_yr_Recidivism', group = 'ethnicity',
-#' probs = 'probability', preds = NULL, preds_levels = c('no', 'yes'),
-#' cutoff = 0.4, base = 'Caucasian')
-#' mcc_parity(data = compas, outcome = 'Two_yr_Recidivism', group = 'ethnicity',
-#' probs = NULL, preds = 'predicted', preds_levels = c('no', 'yes'),
-#' cutoff = 0.5, base = 'Hispanic')
+#' compas$Two_yr_Recidivism_01 <- ifelse(compas$Two_yr_Recidivism == 'yes', 1, 0) 
+#' mcc_parity(data = compas, outcome = 'Two_yr_Recidivism_01', group = 'ethnicity',
+#' probs = 'probability', cutoff = 0.4, base = 'Caucasian')
+#' mcc_parity(data = compas, outcome = 'Two_yr_Recidivism_01', group = 'ethnicity',
+#' preds = 'predicted', cutoff = 0.5, base = 'Hispanic')
 #'
 #' @export
 
 mcc_parity <- function(data, outcome, group,
-                       probs = NULL, preds = NULL, preds_levels = NULL, outcome_base = NULL, 
-                       cutoff = 0.5, base = NULL) {
+                       probs        = NULL, 
+                       preds        = NULL, 
+                       outcome_base = NULL, 
+                       cutoff       = 0.5, 
+                       base         = NULL,
+                       group_breaks = NULL) {
     
     # check if data is data.frame
     if (class(data)[1] != 'data.frame') {
@@ -61,18 +66,44 @@ mcc_parity <- function(data, outcome, group,
         if (length(probs) == 1) {
             probs <- data[, probs]
         }
-        preds_status <- as.factor(as.numeric(probs > cutoff))
+        preds_status         <- as.factor(as.numeric(probs > cutoff))
+        levels(preds_status) <- levels(as.factor(data[, outcome]))
     }
     
+    # check group feature and cut if needed
+    if ((length(unique(data[, group])) > 10) & (is.null(group_breaks))) {
+        warning('Number of unqiue group levels exceeds 10. Consider specifying `group_breaks`.')
+    }
+    if (!is.null(group_breaks)) {
+        if (is.numeric(data[, group])) {
+            data[, group] <- cut(data[, group], breaks = group_breaks)
+        }else{
+            warning('Attempting to bin a non-numeric group feature.')
+        }
+    }
+    
+    # convert to factor
     group_status   <- as.factor(data[, group])
     outcome_status <- as.factor(data[, outcome])
     
-    if (is.null(preds_levels)) {
-        preds_levels <- levels(outcome_status)
+    # check levels matching
+    if (!identical(levels(outcome_status), levels(preds_status))) {
+        warn_preds   <- paste0(levels(preds_status),   collapse = ', ')
+        warn_outcome <- paste0(levels(outcome_status), collapse = ', ')
+        stop({paste0(c('Levels of predictions and outcome do not match. ',
+                       'Please relevel predictions or outcome.\n',
+                       'Outcome levels: ', warn_preds, '\n',
+                       'Preds   levels: ', warn_outcome))})}
+    
+    # relevel preds & outcomes
+    if (is.null(outcome_base)) {
+        outcome_base <- levels(outcome_status)[1]
+    }else{
+        outcome_base <- as.character(outcome_base)
     }
-    levels(preds_status) <- preds_levels
-    outcome_status <- relevel(outcome_status, preds_levels[1])
-    preds_status   <- relevel(preds_status,   preds_levels[1])
+    outcome_status   <- relevel(outcome_status, outcome_base)
+    preds_status     <- relevel(preds_status,   outcome_base)
+    outcome_positive <- levels(outcome_status)[2]
 
     # check lengths
     if ((length(outcome_status) != length(preds_status)) | (length(outcome_status) !=
@@ -81,28 +112,22 @@ mcc_parity <- function(data, outcome, group,
     }
 
     # relevel group
-    if (is.null(base)) {
-        base <- levels(group_status)[1]
-    }
+    if (is.null(base)) {base <- levels(group_status)[1]}
     group_status <- relevel(group_status, base)
 
-    # placeholder
-    val <- rep(NA, length(levels(group_status)))
-    names(val) <- levels(group_status)
-    
-    # set outcome base
-    if (is.null(outcome_base)) {
-        outcome_base <- levels(preds_status)[1]
-    }
+    # placeholders
+    val         <- rep(NA, length(levels(group_status)))
+    names(val)  <- levels(group_status)
+    sample_size <- val
 
     # compute value for all groups
     for (i in levels(group_status)) {
-        cm <- caret::confusionMatrix(preds_status[group_status == i], 
+        cm <- caret::confusionMatrix(preds_status[group_status   == i], 
                                      outcome_status[group_status == i], 
-                                     mode = 'everything',
-                                     positive = outcome_base)
+                                     mode     = 'everything',
+                                     positive = outcome_positive)
         cm_positive <- cm$positive
-        cm_negative <- preds_levels[!(preds_levels %in% cm_positive)]
+        cm_negative <- levels(outcome_status)[!(levels(outcome_status) %in% cm_positive)]
         TP <- as.numeric(cm$table[cm_positive, cm_positive])
         TN <- as.numeric(cm$table[cm_negative, cm_negative])
         FP <- as.numeric(cm$table[cm_positive, cm_negative])
@@ -115,10 +140,12 @@ mcc_parity <- function(data, outcome, group,
             metric_i <- numerator / denominator
         }
         val[i] <- metric_i
+        sample_size[i] <- sum(cm$table)
     }
-
-    res_table <- rbind(val, val/val[[1]])
-    rownames(res_table) <- c('MCC', 'MCC Parity')
+    
+    # aggregate results
+    res_table <- rbind(val, val/val[[1]], sample_size)
+    rownames(res_table) <- c('MCC', 'MCC Parity', 'Group size')
 
     # conversion of metrics to df
     val_df <- as.data.frame(res_table[2, ])

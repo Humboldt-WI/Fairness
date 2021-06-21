@@ -1,4 +1,4 @@
-# fairness: computing measures of algorithmic fairness in R
+# fairness: measuring algorithmic fairness in R
 
 ---
 
@@ -12,23 +12,21 @@
 
 [![minimal R version](https://img.shields.io/badge/R%3E%3D-3.6.0-6666ff.svg)](https://cran.r-project.org/)
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/fairness)](https://www.r-pkg.org/badges/version/fairness)
-[![packageversion](https://img.shields.io/badge/Package%20version-1.1.1-orange.svg?style=flat-square)](commits/master)
+[![packageversion](https://img.shields.io/badge/Package%20version-1.2.2-orange.svg?style=flat-square)](commits/master)
 
 ---
 
 ## Package overview
 
-The fairness R package provides tools to easily calculate algorithmic fairness metrics for given predicted probabilities or predicted classes between different sensitive groups. It also provides opportunities to visualize and compare other prediction metrics between the subgroups. 
+The `fairness` R package offers tools to calculate metrics of algorithmic fairness across different sensitive groups. The metrics are computed based on model predictions in a binary classification task. The package also provides opportunities to visualize and compare other prediction metrics between the sensitive groups.
 
-The package contains functions to compute the most commonly used metrics of algorithmic fairness such as:   
-
+The package contains functions to compute the commonly used fair machine learning metrics such as:   
 - Demographic parity
 - Proportional parity
 - Equalized odds
 - Predictive rate parity
 
-In addition, the following comparisons are also implemented:    
-
+In addition, the following metrics are implemented:    
 - False positive rate parity
 - False negative rate parity
 - Accuracy parity
@@ -37,10 +35,11 @@ In addition, the following comparisons are also implemented:
 - ROC AUC comparison
 - MCC comparison
 
-Most fairness measures are computed based on the confusion matrix resulting from fitting a binary classification model.
+The comprehensive tutorial on using the package is provided in [this blogpost](https://kozodoi.me/r/fairness/packages/2020/05/01/fairness-tutorial.html). We recommend that you go through the tutorial, as it contains a more in-depth description of the fairness package compared to this README. You will also find a brief tutorial in the fairness [vignette](https://github.com/kozodoi/fairness/blob/master/vignettes/fairness.Rmd):
 
-The comprehensive tutorial on using the package is provided in [this blogpost](https://kozodoi.me/r/fairness/packages/2020/05/01/fairness-tutorial.html).
-
+```r
+vignette('fairness')
+```
 
 ## Installation
 
@@ -59,14 +58,6 @@ devtools::install_github('kozodoi/fairness')
 library(fairness)
 ```
 
-## Fairness pipeline
-
-You will find a brief tutorial in the fairness [vignette](https://github.com/kozodoi/fairness/blob/master/vignettes/fairness.Rmd). We recommend that you go through the vignette, as it contains a more in-depth description of the fairness package compared to this brief README. The more detailed tutorial is also available in [this blogpost](https://kozodoi.me/r/fairness/packages/2020/05/01/fairness-tutorial.html).
-
-```r
-vignette('fairness')
-```
-
 ## Brief tutorial
 
 ### Loading the COMPAS sample dataset
@@ -77,39 +68,57 @@ data('compas')
 
 The data already contains all variables necessary to run all parity metrics. In case you set up your own predictive model, you will need to concatenate predicted probabilities or predictions (0/1) to your original dataset or supply them as a vector to the corresponding metric function.
 
-### Running a selected function
+### Computing a fairness metric
+
+All fairness metrics are implemented as separate functions with the same structure of inputs including the outcome variable, model predictions and a sensitive group feature.
 
 ```r
-equal_odds(data         = compas, 
-           outcome      = 'Two_yr_Recidivism',
-           group        = 'ethnicity',
-           probs        = 'probability', 
-           preds_levels = c('no', 'yes'), 
-           cutoff       = 0.5, 
-           base         = 'Caucasian')
+compas$Two_yr_Recidivism_01 <- ifelse(compas$Two_yr_Recidivism == 'yes', 1, 0)
+equal_odds(data    = compas,
+           outcome = 'Two_yr_Recidivism_01',
+           probs   = 'probability',
+           group   = 'ethnicity',
+           cutoff  = 0.5,
+           base    = 'Caucasian')
 ```
 
-### Taking a look at the output
-
-Metrics for equalized odds:     
+### Examining the output
 
 ```
 #>                Caucasian African_American     Asian Hispanic
-#> Sensitivity    0.7782982        0.5845443 0.9130435 0.809375
-#> Equalized odds 1.0000000        0.7510544 1.1731281 1.039929
+#> Sensitivity       0.4720           0.7526    0.2500   0.4656
+#> Equalized odds    1.0000           1.5943    0.5296   0.9864
+#> Group size     2103.0000        3175.0000   31.0000 509.0000
 #>                Native_American     Other
-#> Sensitivity          0.6666667 0.8493151
-#> Equalized odds       0.8565697 1.0912463
+#> Sensitivity             0.6000    0.4194
+#> Equalized odds          1.2711    0.8884
+#> Group size             11.0000  343.0000
 ```
 
 Bar chart for the equalized odds metric:    
-
 ![Bar plot](man/figures/Plot_bar.png)
 
-
 Predicted probability plot for all subgroups:    
-
 ![Bar plot](man/figures/Plot_prob.png)
+
+
+## Citing the package
+
+To cite this package in scientific publications, please use the following query to generate a reference as a text or a BibTeX entry:
+```r
+citation('fairness')
+```
+> Nikita Kozodoi and Tibor V. Varga (2020). fairness: Algorithmic Fairness Metrics. R package version 1.2.1.
+
+```
+ @Manual{,
+    title = {fairness: Algorithmic Fairness Metrics},
+    author = {Nikita Kozodoi and Tibor {V. Varga}},
+    year = {2021},
+    note = {R package version 1.2.1},
+    url = {https://CRAN.R-project.org/package=fairness},
+  }
+```
 
 
 ## Dependencies
@@ -122,6 +131,7 @@ Installation requires R 3.6+ and the following packages:
 
 
 ## Acknowledgments
+
 - Calders, T., & Verwer, S. (2010). Three naive Bayes approaches for discrimination-free classification. Data Mining and Knowledge Discovery, 21(2), 277-292.
 - Chouldechova, A. (2017). Fair prediction with disparate impact: A study of bias in recidivism prediction instruments. Big data, 5(2), 153-163.
 - Feldman, M., Friedler, S. A., Moeller, J., Scheidegger, C., & Venkatasubramanian, S. (2015, August). Certifying and removing disparate impact. In Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (pp. 259-268). ACM.

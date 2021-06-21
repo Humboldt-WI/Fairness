@@ -4,20 +4,20 @@
 \alias{roc_parity}
 \title{ROC AUC parity}
 \usage{
-roc_parity(data, outcome, group, probs, preds_levels = NULL, base = NULL)
+roc_parity(data, outcome, group, probs, base = NULL, group_breaks = NULL)
 }
 \arguments{
-\item{data}{The dataframe that contains the necessary columns.}
+\item{data}{Data.frame that contains the necessary columns.}
 
-\item{outcome}{The column name of the actual outcomes.}
+\item{outcome}{Column name indicating the binary outcome variable (character).}
 
-\item{group}{Sensitive group to examine.}
+\item{group}{Column name indicating the sensitive group (character).}
 
-\item{probs}{The column name or vector of the predicted probabilities (numeric between 0 - 1).}
+\item{probs}{Column name or vector with the predicted probabilities (numeric between 0 - 1).}
 
-\item{preds_levels}{The desired levels of the predicted binary outcome. If not defined, levels of the outcome variable are used.}
+\item{base}{Base level of the sensitive group (character).}
 
-\item{base}{Base level for sensitive group comparison}
+\item{group_breaks}{If group is continuous (e.g., age): either a numeric vector of two or more unique cut points or a single number >= 2 giving the number of intervals into which group feature is to be cut.}
 }
 \value{
 \item{Metric}{Raw ROC AUC metrics for all groups and metrics standardized for the base group (parity metric). Lower values compared to the reference group mean lower ROC AUC values in the selected subgroups}
@@ -37,9 +37,10 @@ lower than 1 mean WORSE prediction for the subgroup.
 }
 \examples{
 data(compas)
-roc_parity(data = compas, outcome = 'Two_yr_Recidivism', group = 'ethnicity',
+compas$Two_yr_Recidivism_01 <- ifelse(compas$Two_yr_Recidivism == 'yes', 1, 0) 
+roc_parity(data = compas, outcome = 'Two_yr_Recidivism_01', group = 'ethnicity',
 probs = 'probability', base = 'Caucasian')
-roc_parity(data = compas, outcome = 'Two_yr_Recidivism', group = 'ethnicity',
+roc_parity(data = compas, outcome = 'Two_yr_Recidivism_01', group = 'ethnicity',
 probs = 'probability', base = 'African_American')
 
 }

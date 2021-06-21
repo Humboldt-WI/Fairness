@@ -1,3 +1,17 @@
+# fairness 1.2.2
+- more detailed error messages for factor level mismatch
+- fixed errors for some factor outcomes
+
+# fairness 1.2.1
+- fixed inconsistencies with `outcome_base` values
+- removed `preds_levels` argument
+- improved documentation of metric functions
+
+# fairness 1.2.0
+- added support for continuous group feature with binning options
+- added group size to metric outputs
+- small updates in documentation
+
 # fairness 1.1.1
 - added check and conversion of data to `data.frame` in metric functions
 - quiet AUC computation in `roc_parity()`
